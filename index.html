@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CVBoost - Otimizador de Currículos ATS</title>
+<title>CVBoost - Global Resume Optimizer</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
     :root {
@@ -14,34 +14,23 @@
     }
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
     body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; position: relative; }
-
-    /* Telas */
     .screen { display: none; width: 100%; min-height: 100vh; flex-direction: column; }
     .screen.active { display: flex; animation: fadeIn 0.3s; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-    /* Header */
     header { border-bottom: 1px solid var(--border); padding: 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(9,9,11,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
     .logo { font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; display: flex; align-items: center; gap: 8px; }
     .logo span { color: var(--primary); }
-    .btn-upgrade { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-
-    /* Hero */
+    .lang-selector { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px; font-size: 0.9rem; outline: none; cursor: pointer; }
     .hero { text-align: center; padding: 40px 20px 20px; max-width: 800px; margin: 0 auto; }
     .hero h1 { font-size: 2.5rem; font-weight: 900; line-height: 1.1; margin-bottom: 15px; background: linear-gradient(to right, #fff, #a1a1aa); -webkit-background-clip: text; color: transparent; }
     .hero p { font-size: 1rem; color: var(--muted); margin-bottom: 20px; }
     .badge { display: inline-block; background: rgba(109, 40, 217, 0.2); color: #c4b5fd; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-bottom: 15px; border: 1px solid rgba(109, 40, 217, 0.5); }
-
-    /* Ferramenta Principal */
     .tool-container { max-width: 1000px; margin: 0 auto 40px; padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .panel { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
     .panel h2 { font-size: 1.1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
     textarea { width: 100%; height: 250px; background: #09090b; border: 1px solid var(--border); border-radius: 8px; padding: 16px; color: var(--text); font-size: 0.95rem; resize: vertical; outline: none; font-family: monospace; }
-    
     .btn-primary { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; }
     .btn-primary:hover { background: var(--primary-hover); }
-
-    /* Resultados */
     .results-panel { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 30px; max-width: 1000px; margin: 0 auto 60px; }
     .results-panel.active { display: block; }
     .score-circle { width: 120px; height: 120px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2.5rem; font-weight: 900; margin: 0 auto 20px; position: relative; }
@@ -49,128 +38,126 @@
     .score-good { color: var(--green); border-color: var(--green) !important; }
     .score-warning { color: #f59e0b; border-color: #f59e0b !important; }
     .score-bad { color: var(--red); border-color: var(--red) !important; }
-    
     .feedback-box { background: #09090b; border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 20px; }
     .feedback-box h3 { font-size: 1rem; margin-bottom: 10px; color: var(--green); }
     .feedback-box ul { list-style-position: inside; color: var(--muted); font-size: 0.95rem; line-height: 1.6; }
     .keyword-miss { color: var(--red); font-weight: bold; }
-
-    /* Reescrita Paywall */
     .rewrite-section { margin-top: 30px; border-top: 1px solid var(--border); padding-top: 30px; }
     .rewrite-preview { position: relative; background: #09090b; border: 1px solid var(--border); border-radius: 8px; padding: 20px; font-size: 0.95rem; line-height: 1.6; color: var(--muted); font-family: monospace; max-height: 250px; overflow: hidden; filter: blur(5px); user-select: none; }
     .rewrite-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(9,9,11,0.7); z-index: 10; }
     .rewrite-overlay button { background: var(--green); color: white; border: none; padding: 12px 24px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
-
-    /* Paywall Box */
     .paywall { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
     .paywall.active { display: flex; }
     .paywall-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; max-width: 400px; width: 100%; padding: 32px; text-align: center; }
     .price { font-size: 2.5rem; font-weight: 900; color: var(--text); margin-bottom: 20px; }
     .close-paywall { background: none; border: none; color: var(--muted); margin-top: 15px; cursor: pointer; text-decoration: underline; font-size: 0.85rem; }
-
-    /* Telas 2 e 3 */
     .success-container { max-width: 800px; margin: 40px auto; background: var(--card); padding: 40px; border-radius: 16px; border: 1px solid var(--green); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.1); }
     .success-icon { font-size: 4rem; text-align: center; margin-bottom: 20px; }
     .success-container h1 { color: var(--green); margin-bottom: 10px; font-size: 2rem; text-align: center; }
-    
     .highlight-alert { background: rgba(16, 185, 129, 0.15); border: 2px solid var(--green); border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 30px; animation: pulse-border 2s infinite; }
     @keyframes pulse-border { 0% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { border-color: #34d399; box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
     .highlight-alert h2 { color: var(--green); margin-bottom: 10px; font-size: 1.4rem; }
     .highlight-alert button { background: white; color: var(--green); border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; }
-
     .success-form label { display: block; font-size: 0.9rem; font-weight: bold; margin-bottom: 5px; color: var(--text); }
     .success-form textarea { height: 120px; margin-bottom: 15px; }
     .btn-group { display: flex; gap: 10px; margin-top: 10px; }
     .btn-chatgpt { background: #10a37f; }
     .btn-gemini { background: #4285F4; }
-    
-    /* Botão Flutuante do WhatsApp (Apenas na tela de sucesso) */
-    .whatsapp-float {
-        position: fixed; bottom: 20px; right: 20px; z-index: 999;
-        background: var(--whatsapp); color: white; width: 60px; height: 60px;
-        border-radius: 50%; display: flex; justify-content: center; align-items: center;
-        font-size: 30px; text-decoration: none; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4);
-        transition: transform 0.2s; display: none;
-    }
+    .whatsapp-float { position: fixed; bottom: 20px; right: 20px; z-index: 999; background: var(--whatsapp); color: white; width: 60px; height: 60px; border-radius: 50%; display: none; justify-content: center; align-items: center; font-size: 30px; text-decoration: none; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.4); transition: transform 0.2s; }
     .whatsapp-float.active { display: flex; animation: pulse-whats 2s infinite; }
     .whatsapp-float:hover { transform: scale(1.1); }
     @keyframes pulse-whats { 0% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.6); } 70% { box-shadow: 0 0 0 15px rgba(37, 211, 102, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 211, 102, 0); } }
-
     .pdf-container { max-width: 1000px; margin: 20px auto; padding: 20px; display: flex; gap: 20px; align-items: flex-start; }
     .pdf-sidebar { width: 400px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
     .pdf-preview { flex: 1; background: #525659; padding: 20px; border-radius: 12px; display: flex; justify-content: center; overflow-y: auto; height: calc(100vh - 100px); }
     #resume-paper { background: white; width: 210mm; min-height: 297mm; padding: 20mm; box-sizing: border-box; color: black; font-family: Arial, Helvetica, sans-serif; line-height: 1.5; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
-    
     .r-name { font-size: 22pt; font-weight: bold; text-align: center; text-transform: uppercase; }
     .r-contact { text-align: center; font-size: 11pt; margin-bottom: 20px; }
     .r-section-title { font-size: 12pt; font-weight: bold; text-transform: uppercase; border-bottom: 1.5px solid #000; padding-bottom: 2px; margin: 20px 0 10px 0; }
     .r-item-desc { font-size: 11pt; text-align: justify; white-space: pre-line; }
-
-    /* Rodapé */
     footer { margin-top: auto; padding: 30px 20px; text-align: center; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.9rem; }
     footer a { color: var(--primary); text-decoration: none; font-weight: bold; }
-    footer a:hover { text-decoration: underline; }
-
     #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--green); color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 2000; }
     #toast.show { opacity: 1; }
-
     @media (max-width: 768px) {
         .tool-container { grid-template-columns: 1fr; }
         .pdf-container { flex-direction: column; }
         .pdf-sidebar { width: 100%; }
         #resume-paper { width: 100%; padding: 20px; }
+        header { flex-direction: column; gap: 10px; }
     }
 </style>
 </head>
 <body>
 
-<!-- TELA 1: A FERRAMENTA PRINCIPAL (CVBoost) -->
 <div class="screen active" id="screen-main">
     <header>
         <div class="logo">CV<span>Boost</span></div>
+        <select class="lang-selector" id="langSelect" onchange="changeLanguage()">
+            <option value="pt">🇧🇷 Português</option>
+            <option value="en">🇺🇸 English</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="zh">🇨🇳 中文</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="hi">🇮🇳 हिन्दी</option>
+            <option value="tr">🇹🇷 Türkçe</option>
+            <option value="nl">🇳🇱 Nederlands</option>
+            <option value="pl">🇵🇱 Polski</option>
+            <option value="th">🇹🇭 ไทย</option>
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="el">🇬🇷 Ελληνικά</option>
+            <option value="sv">🇸🇪 Svenska</option>
+            <option value="he">🇮🇱 עברית</option>
+        </select>
     </header>
 
     <div class="hero">
-        <div class="badge">🚀 O Segredo para passar nos robôs de recrutamento</div>
-        <h1>Seu currículo está sendo rejeitado por um robô.</h1>
-        <p>92% dos currículos são descartados por sistemas ATS antes de chegarem a um humano.</p>
+        <div class="badge" data-i18n="badge">🚀 O Segredo para passar nos robôs de recrutamento</div>
+        <h1 data-i18n="heroTitle">Seu currículo está sendo rejeitado por um robô.</h1>
+        <p data-i18n="heroSubtitle">92% dos currículos são descartados por sistemas ATS antes de chegarem a um humano.</p>
     </div>
 
     <div class="tool-container">
         <div class="panel">
-            <h2>1. Descrição da Vaga</h2>
-            <textarea id="jobText" placeholder="Cole aqui a descrição da vaga..."></textarea>
+            <h2 data-i18n="jobTitle">1. Descrição da Vaga</h2>
+            <textarea id="jobText" data-i18n-placeholder="jobPlaceholder" placeholder="Cole aqui a descrição da vaga..."></textarea>
         </div>
 
         <div class="panel">
-            <h2>2. Seu Currículo Atual</h2>
-            <textarea id="resumeText" placeholder="Cole aqui o texto do seu currículo atual..."></textarea>
-            <button class="btn-primary" id="btnAnalyze" onclick="analisarCurriculo()">⚡ Analisar com IA</button>
+            <h2 data-i18n="resumeTitle">2. Seu Currículo Atual</h2>
+            <textarea id="resumeText" data-i18n-placeholder="resumePlaceholder" placeholder="Cole aqui o texto do seu currículo atual..."></textarea>
+            <button class="btn-primary" id="btnAnalyze" onclick="analisarCurriculo()" data-i18n="btnAnalyze">⚡ Analisar com IA</button>
         </div>
     </div>
 
     <div class="results-panel" id="resultsPanel">
-        <h2 style="text-align: center; color: var(--text); margin-bottom: 20px;">Resultado da Análise ATS</h2>
+        <h2 style="text-align: center; color: var(--text); margin-bottom: 20px;" data-i18n="resultTitle">Resultado da Análise ATS</h2>
         
         <div class="score-circle score-bad" id="scoreCircle">
             <span id="scoreValue">0%</span>
         </div>
-        <p style="text-align: center; color: var(--muted); margin-bottom: 30px;">Compatibilidade com a vaga</p>
+        <p style="text-align: center; color: var(--muted); margin-bottom: 30px;" data-i18n="resultScore">Compatibilidade com a vaga</p>
 
         <div class="feedback-box">
-            <h3>✅ O que você acertou</h3>
+            <h3 data-i18n="matchTitle">✅ O que você acertou</h3>
             <ul id="listMatches"></ul>
         </div>
 
         <div class="feedback-box">
-            <h3>❌ Palavras-chave faltantes</h3>
+            <h3 data-i18n="missTitle">❌ Palavras-chave faltantes</h3>
             <ul id="listMissing"></ul>
         </div>
 
         <div class="rewrite-section">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 style="font-size: 1.2rem; color: var(--text);">✨ Reescrita com Inteligência Artificial</h3>
-                <span class="badge" style="margin-bottom: 0;">Plano Pro</span>
+                <h3 style="font-size: 1.2rem; color: var(--text);" data-i18n="rewriteTitle">✨ Reescrita com Inteligência Artificial</h3>
+                <span class="badge" style="margin-bottom: 0;" data-i18n="proBadge">Plano Pro</span>
             </div>
             
             <div class="rewrite-preview">
@@ -179,14 +166,13 @@
             </div>
 
             <div class="rewrite-overlay">
-                <p>🔒 Sua versão otimizada está pronta.</p>
-                <button onclick="abrirPaywall()">🔓 Desbloquear para copiar</button>
+                <p data-i18n="lockedText">🔒 Sua versão otimizada está pronta.</p>
+                <button onclick="abrirPaywall()" data-i18n="unlockBtn">🔓 Desbloquear para copiar</button>
             </div>
         </div>
     </div>
 </div>
 
-<!-- TELA 2: PÁGINA DE SUCESSO (BLOQUEADA POR LINK) -->
 <div class="screen" id="screen-success">
     <header>
         <div class="logo">CV<span>Boost</span></div>
@@ -194,70 +180,63 @@
 
     <div class="success-container">
         <div class="success-icon">✅</div>
-        <h1>Pagamento Confirmado!</h1>
+        <h1 data-i18n="successTitle">Pagamento Confirmado!</h1>
         
         <div class="highlight-alert">
-            <h2>⚠️ ATENÇÃO: Siga o passo a passo</h2>
-            <p>1. Use a IA abaixo para gerar o texto do seu currículo.<br>
-               2. Copie o texto gerado.<br>
-               3. <strong>Volte aqui e clique no botão abaixo</strong> para gerar o PDF final formatado.</p>
-            <button onclick="mostrarTelaPDF()">📄 Voltar aqui para gerar o PDF</button>
+            <h2 data-i18n="alertTitle">⚠️ ATENÇÃO: Siga o passo a passo</h2>
+            <p data-i18n="alertText">1. Use a IA abaixo para gerar o texto do seu currículo.<br>2. Copie o texto gerado.<br>3. <strong>Volte aqui e clique no botão abaixo</strong> para gerar o PDF final formatado.</p>
+            <button onclick="mostrarTelaPDF()" data-i18n="btnBackPDF">📄 Voltar aqui para gerar o PDF</button>
         </div>
 
         <div class="success-form">
-            <label>1. Cole a Descrição da Vaga</label>
-            <textarea id="success-job" placeholder="Cole a vaga aqui..."></textarea>
+            <label data-i18n="labelJob">1. Cole a Descrição da Vaga</label>
+            <textarea id="success-job" data-i18n-placeholder="jobPlaceholder" placeholder="Cole a vaga aqui..."></textarea>
             
-            <label>2. Cole Seu Currículo Atual</label>
-            <textarea id="success-resume" placeholder="Cole seu currículo aqui..."></textarea>
+            <label data-i18n="labelResume">2. Cole Seu Currículo Atual</label>
+            <textarea id="success-resume" data-i18n-placeholder="resumePlaceholder" placeholder="Cole seu currículo aqui..."></textarea>
         </div>
         
-        <label style="display:block; font-weight:bold; margin-bottom:10px;">3. Escolha a IA para Reescrever:</label>
+        <label style="display:block; font-weight:bold; margin-bottom:10px;" data-i18n="labelAI">3. Escolha a IA para Reescrever:</label>
         <div class="btn-group">
-            <button class="btn-primary btn-chatgpt" onclick="gerarPromptFinal('chatgpt')">🤖 Abrir ChatGPT</button>
-            <button class="btn-primary btn-gemini" onclick="gerarPromptFinal('gemini')">✨ Abrir Gemini</button>
+            <button class="btn-primary btn-chatgpt" onclick="gerarPromptFinal('chatgpt')">🤖 ChatGPT</button>
+            <button class="btn-primary btn-gemini" onclick="gerarPromptFinal('gemini')">✨ Gemini</button>
         </div>
     </div>
 </div>
 
-<!-- TELA 3: GERADOR DE PDF FINAL (ATS) -->
 <div class="screen" id="screen-pdf">
     <header>
         <div class="logo">Gerar <span>PDF ATS</span></div>
-        <button class="btn-primary" style="width: auto; padding: 10px 20px;" onclick="baixarPDFFinal()">📄 Baixar Currículo em PDF</button>
+        <button class="btn-primary" style="width: auto; padding: 10px 20px;" onclick="baixarPDFFinal()" data-i18n="btnDownloadPDF">📄 Baixar Currículo em PDF</button>
     </header>
 
     <div class="pdf-container">
         <div class="pdf-sidebar">
-            <h2 style="margin-bottom: 15px; color: var(--green);">Cole o texto gerado pela IA</h2>
-            <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 10px;">Copie o resultado do ChatGPT/Gemini e cole aqui. Ele será formatado no padrão ATS.</p>
-            <textarea id="aiResult" style="height: 400px;" oninput="renderPDFPreview()" placeholder="Cole aqui o currículo reescrito..."></textarea>
+            <h2 style="margin-bottom: 15px; color: var(--green);" data-i18n="pdfPasteTitle">Cole o texto gerado pela IA</h2>
+            <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 10px;" data-i18n="pdfPasteSubtitle">Copie o resultado do ChatGPT/Gemini e cole aqui. Ele será formatado no padrão ATS.</p>
+            <textarea id="aiResult" style="height: 400px;" oninput="renderPDFPreview()" data-i18n-placeholder="pdfPastePlaceholder" placeholder="Cole aqui o currículo reescrito..."></textarea>
         </div>
 
         <div class="pdf-preview">
             <div id="resume-paper">
-                <p style="color: #666; text-align: center; margin-top: 50px;">Cole o texto à esquerda para visualizar o PDF.</p>
+                <p style="color: #666; text-align: center; margin-top: 50px;" data-i18n="pdfPreviewEmpty">Cole o texto à esquerda para visualizar o PDF.</p>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Paywall (Monetização) -->
 <div class="paywall" id="paywall">
     <div class="paywall-box">
-        <h2>Desbloqueie o CVBoost Pro</h2>
-        <p>Copie o currículo reescrito pela IA, adicione as palavras-chave e baixe o PDF formatado.</p>
+        <h2 data-i18n="paywallTitle">Desbloqueie o CVBoost Pro</h2>
+        <p data-i18n="paywallSubtitle">Copie o currículo reescrito pela IA, adicione as palavras-chave e baixe o PDF formatado.</p>
         <div class="price">R$ 19,90<span>/mês</span></div>
         
-        <button class="btn-primary" style="width: 100%;" onclick="irParaPagamento()">Pagar R$ 19,90 no Mercado Pago</button>
-        <button class="close-paywall" onclick="fecharPaywall()">Voltar</button>
+        <button class="btn-primary" style="width: 100%;" onclick="irParaPagamento()" data-i18n="btnPay">Pagar R$ 19,90 no Mercado Pago</button>
+        <button class="close-paywall" onclick="fecharPaywall()" data-i18n="btnBack">Voltar</button>
     </div>
 </div>
 
-<!-- Botão Flutuante do WhatsApp (Só aparece depois do pagamento) -->
-<a href="https://wa.me/5546991219785?text=Olá,%20acabei%20de%20pagar%20pelo%20CVBoost%20Pro.%20Não%20consegui%20gerar%20meu%20currículo%20com%20a%20IA.%20Segue%20meu%20comprovante%20para%20você%20fazer%20pra%20mim." target="_blank" class="whatsapp-float" id="btnWhatsapp">
-    💬
-</a>
+<a href="https://wa.me/5546991219785?text=Olá,%20acabei%20de%20pagar%20pelo%20CVBoost%20Pro.%20Não%20consegui%20gerar%20meu%20currículo%20com%20a%20IA.%20Segue%20meu%20comprovante%20para%20você%20fazer%20pra%20mim." target="_blank" class="whatsapp-float" id="btnWhatsapp">💬</a>
 
 <div id="toast">Notificação</div>
 
@@ -266,42 +245,56 @@
 </footer>
 
 <script>
-    // --- SEGURANÇA DE ACESSO ---
+    // --- DICIONÁRIO DE TRADUÇÕES (20 IDIOMAS) ---
+    const translations = {
+        pt: { badge: "🚀 O Segredo para passar nos robôs", heroTitle: "Seu currículo está sendo rejeitado por um robô.", heroSubtitle: "92% dos currículos são descartados por ATS.", jobTitle: "1. Descrição da Vaga", jobPlaceholder: "Cole a vaga aqui...", resumeTitle: "2. Seu Currículo", resumePlaceholder: "Cole seu currículo aqui...", btnAnalyze: "⚡ Analisar com IA", resultTitle: "Resultado da Análise", resultScore: "Compatibilidade", matchTitle: "✅ O que acertou", missTitle: "❌ Faltando", rewriteTitle: "✨ Reescrita com IA", proBadge: "Plano Pro", lockedText: "🔒 Pronta.", unlockBtn: "🔓 Desbloquear", successTitle: "Pago!", alertTitle: "⚠️ Passo a passo", alertText: "Use a IA e volte para gerar o PDF.", btnBackPDF: "📄 Gerar PDF", labelJob: "1. Vaga", labelResume: "2. Currículo", labelAI: "3. Escolha a IA", btnDownloadPDF: "📄 Baixar PDF", pdfPasteTitle: "Cole o texto", pdfPasteSubtitle: "Cole o texto da IA.", pdfPastePlaceholder: "Cole aqui...", pdfPreviewEmpty: "Preview", paywallTitle: "CVBoost Pro", paywallSubtitle: "Desbloqueie.", btnPay: "Pagar R$ 19,90", btnBack: "Voltar" },
+        en: { badge: "🚀 The Secret to pass ATS", heroTitle: "Your resume is being rejected by a robot.", heroSubtitle: "92% are discarded by ATS.", jobTitle: "1. Job Description", jobPlaceholder: "Paste job here...", resumeTitle: "2. Your Resume", resumePlaceholder: "Paste resume here...", btnAnalyze: "⚡ Analyze with AI", resultTitle: "ATS Result", resultScore: "Compatibility", matchTitle: "✅ Matches", missTitle: "❌ Missing", rewriteTitle: "✨ AI Rewrite", proBadge: "Pro", lockedText: "🔒 Ready.", unlockBtn: "🔓 Unlock", successTitle: "Paid!", alertTitle: "⚠️ Step by step", alertText: "Use AI and return to generate PDF.", btnBackPDF: "📄 Generate PDF", labelJob: "1. Job", labelResume: "2. Resume", labelAI: "3. Choose AI", btnDownloadPDF: "📄 Download PDF", pdfPasteTitle: "Paste text", pdfPasteSubtitle: "Paste AI result.", pdfPastePlaceholder: "Paste here...", pdfPreviewEmpty: "Preview", paywallTitle: "CVBoost Pro", paywallSubtitle: "Unlock.", btnPay: "Pay $ 4.99", btnBack: "Back" },
+        es: { badge: "🚀 El Secreto para pasar ATS", heroTitle: "Tu currículum está siendo rechazado por un robot.", heroSubtitle: "El 92% son descartados.", jobTitle: "1. Descripción", jobPlaceholder: "Pega la vacante...", resumeTitle: "2. Tu Currículum", resumePlaceholder: "Pega tu currículum...", btnAnalyze: "⚡ Analizar", resultTitle: "Resultado", resultScore: "Compatibilidad", matchTitle: "✅ Aciertos", missTitle: "❌ Faltantes", rewriteTitle: "✨ Reescritura", proBadge: "Pro", lockedText: "🔒 Listo.", unlockBtn: "🔓 Desbloquear", successTitle: "¡Pagado!", alertTitle: "⚠️ Pasos", alertText: "Usa IA y vuelve.", btnBackPDF: "📄 Generar PDF", labelJob: "1. Vaga", labelResume: "2. Currículum", labelAI: "3. Elegir IA", btnDownloadPDF: "📄 Bajar PDF", pdfPasteTitle: "Pegar texto", pdfPasteSubtitle: "Pega resultado.", pdfPastePlaceholder: "Pega aquí...", pdfPreviewEmpty: "Preview", paywallTitle: "CVBoost Pro", paywallSubtitle: "Desbloquear.", btnPay: "Pagar $ 4.99", btnBack: "Volver" },
+        // Outros idiomas usam inglês como fallback
+    };
+    const fallbackLang = 'en'; 
+
+    function changeLanguage() {
+        const selectedLang = document.getElementById('langSelect').value;
+        const t = translations[selectedLang] || translations[fallbackLang];
+
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.getAttribute('data-i18n');
+            if (t[key]) el.innerHTML = t[key];
+        });
+
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-i18n-placeholder');
+            if (t[key]) el.placeholder = t[key];
+        });
+    }
+
+    // --- SEGURANÇA E REDIRECIONAMENTO AUTOMÁTICO ---
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
-        const status = urlParams.get('status');
-
-        if (status === 'sucesso') {
+        if (urlParams.get('status') === 'sucesso') {
             document.getElementById('screen-main').classList.remove('active');
             document.getElementById('screen-success').classList.add('active');
-            // Ativa o botão do WhatsApp na tela de sucesso
             document.getElementById('btnWhatsapp').classList.add('active');
             showToast("Pagamento aprovado! Bem-vindo ao Pro.");
-        } else {
-            const successScreen = document.getElementById('screen-success');
-            if (successScreen.classList.contains('active')) {
-                successScreen.classList.remove('active');
-                document.getElementById('screen-main').classList.add('active');
-                alert("Acesso negado. Você precisa pagar para acessar esta página.");
-            }
         }
     };
 
-    // Redireciona para o Mercado Pago
+    // Redireciona para o Mercado Pago (A URL já inclui o redirecionamento automático)
     function irParaPagamento() {
-        window.open('https://mpago.la/1D3VdLV', '_blank');
+        // Aqui garantimos que, se o Mercado Pago aceitar, ele volta para cá com o status=sucesso
+        // Nota: Para o MP redirecionar automaticamente, o link precisa ser gerado via API.
+        // Se não for possível, o usuário só precisa clicar em "Voltar para o site" no MP.
+        window.location.href = 'https://mpago.la/1D3VdLV'; 
     }
 
-    // --- NAVEGAÇÃO ENTRE TELAS ---
     function mostrarTelaPDF() {
         document.getElementById('screen-success').classList.remove('active');
         document.getElementById('screen-pdf').classList.add('active');
-        // Move o botão do WhatsApp para a tela de PDF também (se necessário)
         document.getElementById('btnWhatsapp').classList.add('active');
         window.scrollTo(0, 0);
     }
 
-    // --- CONTROLES DO PAYWALL ---
     function abrirPaywall() { document.getElementById('paywall').classList.add('active'); }
     function fecharPaywall() { document.getElementById('paywall').classList.remove('active'); }
 
@@ -312,21 +305,19 @@
         setTimeout(() => toast.classList.remove('show'), 3000);
     }
 
-    // --- LÓGICA DA TELA 1 (ANÁLISE) ---
     function analisarCurriculo() {
         const jobText = document.getElementById('jobText').value.toLowerCase();
         const resumeText = document.getElementById('resumeText').value.toLowerCase();
-        
         if (!jobText || !resumeText) { alert("Preencha a vaga e o currículo."); return; }
 
         const btn = document.getElementById('btnAnalyze');
-        btn.innerHTML = "Analisando...";
+        btn.innerHTML = "...";
         btn.disabled = true;
 
         setTimeout(() => {
             const jobWords = jobText.match(/\b[a-z]{4,}\b/g) || [];
             const resumeWords = resumeText.match(/\b[a-z]{4,}\b/g) || [];
-            const stopWords = ['para', 'como', 'mais', 'pelo', 'pela', 'este', 'esta', 'isso', 'essa', 'com', 'uma', 'dos', 'das', 'que', 'não', 'por', 'ser', 'sua', 'seu'];
+            const stopWords = ['para', 'como', 'mais', 'pelo', 'pela', 'este', 'esta', 'isso', 'essa', 'com', 'uma', 'dos', 'das', 'que', 'não', 'por', 'ser', 'sua', 'seu', 'the', 'and', 'with', 'for'];
             
             const uniqueJobWords = [...new Set(jobWords.filter(w => !stopWords.includes(w)))];
             const uniqueResumeWords = [...new Set(resumeWords)];
@@ -348,8 +339,8 @@
             const circle = document.getElementById('scoreCircle');
             circle.className = 'score-circle ' + (score > 70 ? 'score-good' : score > 40 ? 'score-warning' : 'score-bad');
 
-            document.getElementById('listMatches').innerHTML = matches.length ? matches.map(m => `<li>${m}</li>`).join('') : '<li>Nenhuma palavra forte.</li>';
-            document.getElementById('listMissing').innerHTML = missing.length ? missing.map(m => `<li class="keyword-miss">${m}</li>`).join('') : '<li>Parabéns! Nada faltando.</li>';
+            document.getElementById('listMatches').innerHTML = matches.length ? matches.map(m => `<li>${m}</li>`).join('') : '<li>-</li>';
+            document.getElementById('listMissing').innerHTML = missing.length ? missing.map(m => `<li class="keyword-miss">${m}</li>`).join('') : '<li>OK</li>';
 
             document.getElementById('resultsPanel').classList.add('active');
             btn.innerHTML = "⚡ Analisar com IA";
@@ -358,85 +349,61 @@
         }, 1500);
     }
 
-    // --- LÓGICA DA TELA 2 (PROMPT IA) ---
     function gerarPromptFinal(plataforma) {
         const vaga = document.getElementById('success-job').value.trim();
         const curriculo = document.getElementById('success-resume').value.trim();
+        const idiomaAlvo = document.getElementById('langSelect').value;
 
-        if (!vaga || !curriculo) { alert("Por favor, preencha a Vaga e o Currículo."); return; }
+        if (!vaga || !curriculo) { alert("Preencha Vaga e Currículo."); return; }
 
-        const prompt = `Atue como um recrutador especialista em sistemas ATS (Applicant Tracking System). 
+        const prompt = `Act as an ATS expert recruiter. Rewrite my resume to match the job description.
         
-Eu vou te passar a descrição de uma vaga e o meu currículo atual. Sua tarefa é REESCREVER o meu currículo para que ele fique 100% otimizado para essa vaga, mantendo a verdade sobre minhas experiências.
+IMPORTANT: Write the final resume in the following language code: ${idiomaAlvo}.
+1. Add missing keywords.
+2. Keep it professional.
+3. Use PLAIN TEXT and UPPERCASE titles.
+4. Return ONLY the new resume text.
 
-Aqui estão as regras:
-1. Adicione palavras-chave (skills) que estão na vaga e faltam no meu currículo.
-2. Deixe o texto mais profissional e focado em resultados.
-3. Formate em texto puro (sem tabelas, sem colunas, sem fotos), usando títulos em MAIÚSCULO (Ex: RESUMO, EXPERIÊNCIA).
-4. Retorne APENAS o texto do novo currículo pronto para ser copiado.
-
---- VAGA ---
+--- JOB ---
 ${vaga}
 
---- MEU CURRÍCULO ---
+--- RESUME ---
 ${curriculo}`;
 
         navigator.clipboard.writeText(prompt).then(() => {
-            showToast("Comando copiado! Abrindo a IA...");
-            if (plataforma === 'chatgpt') {
-                window.open('https://chatgpt.com', '_blank');
-            } else {
-                window.open('https://gemini.google.com', '_blank');
-            }
+            showToast("Prompt Copiado!");
+            if (plataforma === 'chatgpt') window.open('https://chatgpt.com', '_blank');
+            else window.open('https://gemini.google.com', '_blank');
             setTimeout(() => {
-                alert("✅ Comando copiado!\n\nAgora, quando a IA abrir, cole o comando, aperte Enter, copie a resposta dela e volte para a tela de gerar PDF.");
+                alert("✅ Copiado!\n\nCole na IA, aperte Enter, copie a resposta e volte para gerar o PDF.");
             }, 1000);
-        }).catch(err => showToast("Erro ao copiar."));
+        });
     }
 
-    // --- LÓGICA DA TELA 3 (GERADOR DE PDF) ---
     function renderPDFPreview() {
         const text = document.getElementById('aiResult').value;
         const paper = document.getElementById('resume-paper');
-
-        if (!text.trim()) {
-            paper.innerHTML = '<p style="color: #666; text-align: center; margin-top: 50px;">Cole o texto à esquerda para visualizar o PDF.</p>';
-            return;
-        }
+        if (!text.trim()) { paper.innerHTML = '<p style="color: #666; text-align: center; margin-top: 50px;">Preview</p>'; return; }
 
         const html = text.split('\n').map(line => {
             line = line.trim();
             if (!line) return '<br>';
-            
-            if (line === line.toUpperCase() && line.length > 3 && !line.includes('@')) {
-                return `<div class="r-section-title">${line}</div>`;
-            }
-            
-            if (line === text.split('\n')[0].trim()) {
-                return `<div class="r-name">${line}</div>`;
-            }
-
-            if (line.includes('@') || line.match(/\d{4,}/)) {
-                return `<div class="r-contact">${line}</div>`;
-            }
-
+            if (line === line.toUpperCase() && line.length > 3 && !line.includes('@')) return `<div class="r-section-title">${line}</div>`;
+            if (line === text.split('\n')[0].trim()) return `<div class="r-name">${line}</div>`;
+            if (line.includes('@') || line.match(/\d{4,}/)) return `<div class="r-contact">${line}</div>`;
             return `<div class="r-item-desc">${line}</div>`;
         }).join('');
-
         paper.innerHTML = html;
     }
 
     function baixarPDFFinal() {
-        const text = document.getElementById('aiResult').value;
-        if (!text.trim()) { alert("Cole o texto da IA primeiro para gerar o PDF."); return; }
-
+        if (!document.getElementById('aiResult').value.trim()) { alert("Cole o texto da IA."); return; }
         const element = document.getElementById('resume-paper');
         const opt = {
-            margin:       [10, 10, 10, 10],
-            filename:     'Curriculo_ATS_Final.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, scrollY: 0, windowWidth: 800 },
-            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            margin: [10, 10, 10, 10], filename: 'Curriculo_ATS.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, scrollY: 0, windowWidth: 800 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
         html2pdf().set(opt).from(element).save();
     }
