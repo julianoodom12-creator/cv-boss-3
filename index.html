@@ -28,7 +28,14 @@
     .tool-container { max-width: 1000px; margin: 0 auto 40px; padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .panel { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
     .panel h2 { font-size: 1.1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
-    textarea { width: 100%; height: 250px; background: #09090b; border: 1px solid var(--border); border-radius: 8px; padding: 16px; color: var(--text); font-size: 0.95rem; resize: vertical; outline: none; font-family: monospace; }
+    
+    /* Link Input */
+    .link-group { display: flex; gap: 10px; }
+    .link-group input { flex: 1; padding: 14px; border-radius: 8px; border: 1px solid var(--border); background: #09090b; color: var(--text); outline: none; }
+    .link-group input:focus { border-color: var(--primary); }
+    .link-group button { padding: 0 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+    textarea { width: 100%; height: 200px; background: #09090b; border: 1px solid var(--border); border-radius: 8px; padding: 16px; color: var(--text); font-size: 0.95rem; resize: vertical; outline: none; font-family: monospace; }
     .btn-primary { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; }
     .btn-primary:hover { background: var(--primary-hover); }
     .results-panel { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 30px; max-width: 1000px; margin: 0 auto 60px; }
@@ -126,7 +133,15 @@
     <div class="tool-container">
         <div class="panel">
             <h2 data-i18n="jobTitle">1. Descrição da Vaga</h2>
-            <textarea id="jobText" data-i18n-placeholder="jobPlaceholder" placeholder="Cole aqui a descrição da vaga..."></textarea>
+            
+            <!-- CAMPO DE LINK RESTAURADO -->
+            <div class="link-group">
+                <input type="url" id="jobLink" placeholder="Cole o link da vaga (LinkedIn, Indeed...)" data-i18n-placeholder="linkPlaceholder">
+                <button onclick="extrairVaga()" data-i18n="btnExtract">Extrair</button>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--muted);" data-i18n="linkWarning">O LinkedIn pode bloquear a leitura automática. Se isso acontecer, abriremos a vaga para você copiar.</p>
+
+            <textarea id="jobText" data-i18n-placeholder="jobPlaceholder" placeholder="Ou cole aqui a descrição da vaga..."></textarea>
         </div>
 
         <div class="panel">
@@ -251,7 +266,10 @@
         heroTitle: "Seu currículo está sendo rejeitado por um robô.",
         heroSubtitle: "92% dos currículos são descartados por ATS.",
         jobTitle: "1. Descrição da Vaga",
-        jobPlaceholder: "Cole a vaga aqui...",
+        linkPlaceholder: "Cole o link da vaga (LinkedIn, Indeed...)",
+        btnExtract: "Extrair",
+        linkWarning: "O LinkedIn pode bloquear a leitura automática. Se isso acontecer, abriremos a vaga para você copiar.",
+        jobPlaceholder: "Ou cole aqui a descrição da vaga...",
         resumeTitle: "2. Seu Currículo",
         resumePlaceholder: "Cole seu currículo aqui...",
         btnAnalyze: "⚡ Analisar com IA",
@@ -281,12 +299,11 @@
         btnBack: "Voltar"
     };
 
-    // Função assíncrona para traduzir textos
+    // Função para traduzir a interface
     async function changeLanguage() {
         const selectedLang = document.getElementById('langSelect').value;
         const elementsToTranslate = document.querySelectorAll('[data-i18n]');
         
-        // Se for Português, aplica direto do dicionário base (sem gastar API)
         if (selectedLang === 'pt') {
             elementsToTranslate.forEach(el => {
                 const key = el.getAttribute('data-i18n');
@@ -299,33 +316,50 @@
             return;
         }
 
-        // Para os outros 19 idiomas, usa a API gratuita do Google Translate
         const texts = Array.from(elementsToTranslate).map(el => baseTranslations[el.getAttribute('data-i18n')]);
         const placeholders = Array.from(document.querySelectorAll('[data-i18n-placeholder]')).map(el => baseTranslations[el.getAttribute('data-i18n-placeholder')]);
-        
-        // Junta tudo num texto só separado por pipe para traduzir de uma vez
         const payload = texts.concat(placeholders).join(' | ');
         
         try {
             const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=pt&tl=${selectedLang}&dt=t&q=${encodeURIComponent(payload)}`;
             const response = await fetch(url);
             const data = await response.json();
+            let translatedParts = data[0].map(item => item[0]).join('').split(' | ');
             
-            // Reconstrói o texto traduzido
-            let translatedFullText = data[0].map(item => item[0]).join('');
-            let translatedParts = translatedFullText.split(' | ');
-            
-            // Aplica as traduções no HTML
-            elementsToTranslate.forEach((el, index) => {
-                el.innerHTML = translatedParts[index] || el.innerHTML;
-            });
-            
-            document.querySelectorAll('[data-i18n-placeholder]').forEach((el, index) => {
-                el.placeholder = translatedParts[texts.length + index] || el.placeholder;
-            });
+            elementsToTranslate.forEach((el, index) => { el.innerHTML = translatedParts[index] || el.innerHTML; });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach((el, index) => { el.placeholder = translatedParts[texts.length + index] || el.placeholder; });
+        } catch (error) { console.error("Erro na tradução", error); }
+    }
 
+    // --- LÓGICA DE EXTRAIR VAGA ---
+    async function extrairVaga() {
+        const link = document.getElementById('jobLink').value;
+        if (!link) { alert("Cole um link primeiro."); return; }
+
+        showToast("Tentando extrair a vaga...");
+        
+        try {
+            // Tenta ler o site via proxy público
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(link)}`;
+            const response = await fetch(proxyUrl);
+            const data = await response.json();
+            
+            if (data.contents) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data.contents, "text/html");
+                let textoVaga = doc.body.innerText || doc.body.textContent;
+                
+                if (textoVaga.length > 100) {
+                    document.getElementById('jobText').value = textoVaga.substring(0, 5000);
+                    showToast("Vaga extraída!");
+                    return;
+                }
+            }
+            throw new Error("Bloqueado.");
         } catch (error) {
-            console.error("Erro na tradução automática", error);
+            // Se o LinkedIn bloquear, abre a vaga no navegador
+            showToast("Bloqueio. Abrindo a vaga...");
+            window.open(link, '_blank');
         }
     }
 
@@ -340,20 +374,13 @@
         }
     };
 
-    // Redireciona para o Mercado Pago
-    function irParaPagamento() {
-        // IMPORTANTE: O link do Mercado Pago precisa estar configurado 
-        // para redirecionar de volta para https://cvboost-two.vercel.app/?status=sucesso
-        window.location.href = 'https://mpago.la/1D3VdLV'; 
-    }
-
+    function irParaPagamento() { window.location.href = 'https://mpago.la/1D3VdLV'; }
     function mostrarTelaPDF() {
         document.getElementById('screen-success').classList.remove('active');
         document.getElementById('screen-pdf').classList.add('active');
         document.getElementById('btnWhatsapp').classList.add('active');
         window.scrollTo(0, 0);
     }
-
     function abrirPaywall() { document.getElementById('paywall').classList.add('active'); }
     function fecharPaywall() { document.getElementById('paywall').classList.remove('active'); }
 
