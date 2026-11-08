@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>CVBoost - Otimizador de Currículos ATS</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
     :root {
         --bg: #09090b; --card: #18181b; --border: #27272a;
@@ -13,38 +14,35 @@
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
     body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
 
-    /* Telas (Controle de Visibilidade) */
+    /* Telas */
     .screen { display: none; width: 100%; min-height: 100vh; flex-direction: column; }
     .screen.active { display: flex; animation: fadeIn 0.3s; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-    /* Header SaaS */
+    /* Header */
     header { border-bottom: 1px solid var(--border); padding: 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(9,9,11,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
     .logo { font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; display: flex; align-items: center; gap: 8px; }
     .logo span { color: var(--primary); }
     .btn-upgrade { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-    .btn-upgrade:hover { background: var(--primary-hover); }
 
-    /* Hero Section */
+    /* Hero */
     .hero { text-align: center; padding: 40px 20px 20px; max-width: 800px; margin: 0 auto; }
     .hero h1 { font-size: 2.5rem; font-weight: 900; line-height: 1.1; margin-bottom: 15px; background: linear-gradient(to right, #fff, #a1a1aa); -webkit-background-clip: text; color: transparent; }
     .hero p { font-size: 1rem; color: var(--muted); margin-bottom: 20px; }
     .badge { display: inline-block; background: rgba(109, 40, 217, 0.2); color: #c4b5fd; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-bottom: 15px; border: 1px solid rgba(109, 40, 217, 0.5); }
 
-    /* Ferramenta (App) */
+    /* Ferramenta Principal */
     .tool-container { max-width: 1000px; margin: 0 auto 40px; padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .panel { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
     .panel h2 { font-size: 1.1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
     textarea { width: 100%; height: 250px; background: #09090b; border: 1px solid var(--border); border-radius: 8px; padding: 16px; color: var(--text); font-size: 0.95rem; resize: vertical; outline: none; font-family: monospace; }
-    textarea:focus { border-color: var(--primary); }
     
     .btn-primary { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; }
     .btn-primary:hover { background: var(--primary-hover); }
-    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
     /* Resultados */
     .results-panel { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 30px; max-width: 1000px; margin: 0 auto 60px; }
-    .results-panel.active { display: block; animation: fadeIn 0.5s; }
+    .results-panel.active { display: block; }
     .score-circle { width: 120px; height: 120px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2.5rem; font-weight: 900; margin: 0 auto 20px; position: relative; }
     .score-circle::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 4px solid var(--border); }
     .score-good { color: var(--green); border-color: var(--green) !important; }
@@ -54,53 +52,62 @@
     .feedback-box { background: #09090b; border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 20px; }
     .feedback-box h3 { font-size: 1rem; margin-bottom: 10px; color: var(--green); }
     .feedback-box ul { list-style-position: inside; color: var(--muted); font-size: 0.95rem; line-height: 1.6; }
-    .feedback-box li { margin-bottom: 8px; }
     .keyword-miss { color: var(--red); font-weight: bold; }
 
-    /* Área de Reescrita (Bloqueada) */
+    /* Reescrita Paywall */
     .rewrite-section { margin-top: 30px; border-top: 1px solid var(--border); padding-top: 30px; }
-    .rewrite-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-    .rewrite-header h3 { font-size: 1.2rem; color: var(--text); }
     .rewrite-preview { position: relative; background: #09090b; border: 1px solid var(--border); border-radius: 8px; padding: 20px; font-size: 0.95rem; line-height: 1.6; color: var(--muted); font-family: monospace; max-height: 250px; overflow: hidden; filter: blur(5px); user-select: none; }
     .rewrite-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(9,9,11,0.7); z-index: 10; }
-    .rewrite-overlay p { color: var(--text); font-weight: bold; margin-bottom: 15px; font-size: 1.1rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-    .rewrite-overlay button { background: var(--green); color: white; border: none; padding: 12px 24px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); transition: 0.2s; }
+    .rewrite-overlay button { background: var(--green); color: white; border: none; padding: 12px 24px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); }
     .rewrite-overlay button:hover { transform: scale(1.05); }
 
-    /* Paywall Overlay */
+    /* Paywall Box */
     .paywall { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
     .paywall.active { display: flex; }
     .paywall-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; max-width: 400px; width: 100%; padding: 32px; text-align: center; }
-    .paywall-box h2 { font-size: 1.5rem; margin-bottom: 10px; }
-    .paywall-box p { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; }
     .price { font-size: 2.5rem; font-weight: 900; color: var(--text); margin-bottom: 20px; }
-    .price span { font-size: 1rem; color: var(--muted); font-weight: normal; }
-    .close-paywall { background: none; border: none; color: var(--muted); margin-top: 15px; cursor: pointer; font-size: 0.85rem; text-decoration: underline; }
+    .close-paywall { background: none; border: none; color: var(--muted); margin-top: 15px; cursor: pointer; text-decoration: underline; font-size: 0.85rem; }
 
-    /* --- TELA DE SUCESSO (O que ele vê depois de pagar) --- */
-    .success-container { max-width: 600px; margin: 40px auto; background: var(--card); padding: 40px; border-radius: 16px; border: 1px solid var(--green); text-align: center; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.1); }
-    .success-icon { font-size: 4rem; margin-bottom: 20px; }
-    .success-container h1 { color: var(--green); margin-bottom: 10px; font-size: 2rem; }
-    .success-container p { color: var(--muted); margin-bottom: 30px; }
+    /* Telas 2 e 3 (Sucesso e Gerador PDF) */
+    .success-container { max-width: 800px; margin: 40px auto; background: var(--card); padding: 40px; border-radius: 16px; border: 1px solid var(--green); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.1); }
+    .success-icon { font-size: 4rem; text-align: center; margin-bottom: 20px; }
+    .success-container h1 { color: var(--green); margin-bottom: 10px; font-size: 2rem; text-align: center; }
     
-    .success-form { text-align: left; margin-bottom: 20px; }
+    /* AVISO EM DESTAQUE PARA VOLTAR E GERAR O PDF */
+    .highlight-alert {
+        background: rgba(16, 185, 129, 0.15); border: 2px solid var(--green); border-radius: 12px;
+        padding: 20px; text-align: center; margin-bottom: 30px; animation: pulse-border 2s infinite;
+    }
+    @keyframes pulse-border { 0% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); } 70% { border-color: #34d399; box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); } 100% { border-color: var(--green); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } }
+    .highlight-alert h2 { color: var(--green); margin-bottom: 10px; font-size: 1.4rem; }
+    .highlight-alert p { color: var(--text); font-size: 1rem; line-height: 1.5; }
+    .highlight-alert button { background: white; color: var(--green); border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; margin-top: 15px; cursor: pointer; font-size: 1rem; }
+
     .success-form label { display: block; font-size: 0.9rem; font-weight: bold; margin-bottom: 5px; color: var(--text); }
-    .success-form textarea { height: 150px; margin-bottom: 15px; }
+    .success-form textarea { height: 120px; margin-bottom: 15px; }
+    .btn-group { display: flex; gap: 10px; margin-top: 10px; }
+    .btn-chatgpt { background: #10a37f; }
+    .btn-gemini { background: #4285F4; }
+    
+    /* Gerador de PDF (Tela 3) */
+    .pdf-container { max-width: 1000px; margin: 20px auto; padding: 20px; display: flex; gap: 20px; align-items: flex-start; }
+    .pdf-sidebar { width: 400px; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+    .pdf-preview { flex: 1; background: #525659; padding: 20px; border-radius: 12px; display: flex; justify-content: center; overflow-y: auto; height: calc(100vh - 100px); }
+    #resume-paper { background: white; width: 210mm; min-height: 297mm; padding: 20mm; box-sizing: border-box; color: black; font-family: Arial, Helvetica, sans-serif; line-height: 1.5; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
+    
+    .r-name { font-size: 22pt; font-weight: bold; text-align: center; text-transform: uppercase; }
+    .r-contact { text-align: center; font-size: 11pt; margin-bottom: 20px; }
+    .r-section-title { font-size: 12pt; font-weight: bold; text-transform: uppercase; border-bottom: 1.5px solid #000; padding-bottom: 2px; margin: 20px 0 10px 0; }
+    .r-item-desc { font-size: 11pt; text-align: justify; white-space: pre-line; }
 
-    .btn-group { display: flex; gap: 10px; }
-    .btn-chatgpt { background: #10a37f; color: white; }
-    .btn-chatgpt:hover { background: #0d8c6d; }
-    .btn-gemini { background: #4285F4; color: white; }
-    .btn-gemini:hover { background: #3367d6; }
-
-    /* Toast */
-    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 2000; }
+    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--green); color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 2000; }
     #toast.show { opacity: 1; }
 
     @media (max-width: 768px) {
         .tool-container { grid-template-columns: 1fr; }
-        .hero h1 { font-size: 2rem; }
-        .success-container { margin: 20px; padding: 20px; }
+        .pdf-container { flex-direction: column; }
+        .pdf-sidebar { width: 100%; }
+        #resume-paper { width: 100%; padding: 20px; }
     }
 </style>
 </head>
@@ -125,8 +132,8 @@
 
     <div class="tool-container">
         <div class="panel">
-            <h2>1. Link ou Texto da Vaga</h2>
-            <textarea id="jobText" placeholder="Cole aqui a descrição da vaga (LinkedIn, Indeed, etc)..."></textarea>
+            <h2>1. Descrição da Vaga</h2>
+            <textarea id="jobText" placeholder="Cole aqui a descrição da vaga..."></textarea>
         </div>
 
         <div class="panel">
@@ -155,15 +162,14 @@
         </div>
 
         <div class="rewrite-section">
-            <div class="rewrite-header">
-                <h3>✨ Reescrita com Inteligência Artificial</h3>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="font-size: 1.2rem; color: var(--text);">✨ Reescrita com Inteligência Artificial</h3>
                 <span class="badge" style="margin-bottom: 0;">Plano Pro</span>
             </div>
             
             <div class="rewrite-preview">
                 <p><strong>Seu Currículo Otimizado</strong></p>
                 <p>Aqui a inteligência artificial reescreve suas experiências, adiciona as palavras-chave exatas que o robô da empresa busca e formata tudo no padrão ATS...</p>
-                <p>Isso aumenta suas chances de passar para a entrevista em até 5x.</p>
             </div>
 
             <div class="rewrite-overlay">
@@ -178,11 +184,23 @@
 <!-- TELA 2: PÁGINA DE SUCESSO (PÓS-PAGAMENTO)  -->
 <!-- ========================================== -->
 <div class="screen" id="screen-success">
+    <header>
+        <div class="logo">CV<span>Boost</span></div>
+    </header>
+
     <div class="success-container">
         <div class="success-icon">✅</div>
         <h1>Pagamento Confirmado!</h1>
-        <p>Obrigado por confiar no CVBoost. Agora, gere seu currículo otimizado gratuitamente usando o poder da Inteligência Artificial.</p>
         
+        <!-- AVISO EM DESTAQUE -->
+        <div class="highlight-alert">
+            <h2>⚠️ ATENÇÃO: Siga o passo a passo</h2>
+            <p>1. Use a IA abaixo para gerar o texto do seu currículo.<br>
+               2. Copie o texto gerado.<br>
+               3. <strong>Volte aqui e clique no botão abaixo</strong> para gerar o PDF final formatado.</p>
+            <button onclick="mostrarTelaPDF()">📄 Voltar aqui para gerar o PDF</button>
+        </div>
+
         <div class="success-form">
             <label>1. Cole a Descrição da Vaga</label>
             <textarea id="success-job" placeholder="Cole a vaga aqui..."></textarea>
@@ -191,10 +209,35 @@
             <textarea id="success-resume" placeholder="Cole seu currículo aqui..."></textarea>
         </div>
         
-        <label style="display:block; font-weight:bold; margin-bottom:10px; text-align:left;">3. Escolha a IA para Reescrever:</label>
+        <label style="display:block; font-weight:bold; margin-bottom:10px;">3. Escolha a IA para Reescrever:</label>
         <div class="btn-group">
-            <button class="btn-primary btn-chatgpt" onclick="gerarPromptFinal('chatgpt')">🤖 Usar ChatGPT</button>
-            <button class="btn-primary btn-gemini" onclick="gerarPromptFinal('gemini')">✨ Usar Gemini</button>
+            <button class="btn-primary btn-chatgpt" onclick="gerarPromptFinal('chatgpt')">🤖 Abrir ChatGPT</button>
+            <button class="btn-primary btn-gemini" onclick="gerarPromptFinal('gemini')">✨ Abrir Gemini</button>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- TELA 3: GERADOR DE PDF FINAL (ATS)         -->
+<!-- ========================================== -->
+<div class="screen" id="screen-pdf">
+    <header>
+        <div class="logo">Gerar <span>PDF ATS</span></div>
+        <button class="btn-primary" style="width: auto; padding: 10px 20px;" onclick="baixarPDFFinal()">📄 Baixar Currículo em PDF</button>
+    </header>
+
+    <div class="pdf-container">
+        <div class="pdf-sidebar">
+            <h2 style="margin-bottom: 15px; color: var(--green);">Cole o texto gerado pela IA</h2>
+            <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 10px;">Copie o resultado do ChatGPT/Gemini e cole aqui. Ele será formatado no padrão ATS.</p>
+            <textarea id="aiResult" style="height: 400px;" oninput="renderPDFPreview()" placeholder="Cole aqui o currículo reescrito..."></textarea>
+        </div>
+
+        <div class="pdf-preview">
+            <div id="resume-paper">
+                <!-- O PDF é renderizado aqui -->
+                <p style="color: #666; text-align: center; margin-top: 50px;">Cole o texto à esquerda para visualizar o PDF.</p>
+            </div>
         </div>
     </div>
 </div>
@@ -206,11 +249,8 @@
         <p>Copie o currículo reescrito pela IA, adicione as palavras-chave e baixe o PDF formatado.</p>
         <div class="price">R$ 19,90<span>/mês</span></div>
         
-        <!-- O LINK DO MERCADO PAGO ESTÁ AQUI -->
-        <!-- O redirecionamento para a tela de sucesso é feito após o usuário clicar em "já paguei" -->
         <button class="btn-primary" style="width: 100%; margin-bottom: 10px;" onclick="window.open('https://mpago.la/1D3VdLV', '_blank')">Ir para o Mercado Pago</button>
         
-        <!-- Botão que simula o retorno do Mercado Pago para a tela de sucesso -->
         <button class="btn-primary" style="width: 100%; background: var(--border); color: var(--text);" onclick="mostrarSucesso()">Já paguei (Acessar IA)</button>
         
         <button class="close-paywall" onclick="fecharPaywall()">Continuar com o plano grátis</button>
@@ -228,11 +268,16 @@
         window.scrollTo(0, 0);
     }
 
+    function mostrarTelaPDF() {
+        document.getElementById('screen-success').classList.remove('active');
+        document.getElementById('screen-pdf').classList.add('active');
+        window.scrollTo(0, 0);
+    }
+
     // --- CONTROLES DO PAYWALL ---
     function abrirPaywall() { document.getElementById('paywall').classList.add('active'); }
     function fecharPaywall() { document.getElementById('paywall').classList.remove('active'); }
 
-    // --- NOTIFICAÇÕES ---
     function showToast(msg) {
         const toast = document.getElementById('toast');
         toast.innerText = msg;
@@ -280,15 +325,13 @@
             document.getElementById('listMissing').innerHTML = missing.length ? missing.map(m => `<li class="keyword-miss">${m}</li>`).join('') : '<li>Parabéns! Nada faltando.</li>';
 
             document.getElementById('resultsPanel').classList.add('active');
-            
             btn.innerHTML = "⚡ Analisar com IA";
             btn.disabled = false;
-            
             document.getElementById('resultsPanel').scrollIntoView({ behavior: 'smooth' });
         }, 1500);
     }
 
-    // --- LÓGICA DA TELA 2 (GERADOR DE PROMPT PÓS-PAGO) ---
+    // --- LÓGICA DA TELA 2 (PROMPT IA) ---
     function gerarPromptFinal(plataforma) {
         const vaga = document.getElementById('success-job').value.trim();
         const curriculo = document.getElementById('success-resume').value.trim();
@@ -313,19 +356,67 @@ ${curriculo}`;
 
         navigator.clipboard.writeText(prompt).then(() => {
             showToast("Comando copiado! Abrindo a IA...");
-            
             if (plataforma === 'chatgpt') {
                 window.open('https://chatgpt.com', '_blank');
             } else {
                 window.open('https://gemini.google.com', '_blank');
             }
-            
             setTimeout(() => {
-                alert("✅ Comando copiado!\n\nAgora, quando o ChatGPT ou Gemini abrir, basta segurar o dedo no campo de digitar, tocar em 'Colar' e apertar Enter. A IA vai reescrever seu currículo na hora!");
+                alert("✅ Comando copiado!\n\nAgora, quando a IA abrir, cole o comando, aperte Enter, copie a resposta dela e volte para a tela de gerar PDF.");
             }, 1000);
-        }).catch(err => {
-            showToast("Erro ao copiar. Selecione o texto manualmente.");
-        });
+        }).catch(err => showToast("Erro ao copiar."));
+    }
+
+    // --- LÓGICA DA TELA 3 (GERADOR DE PDF) ---
+    function renderPDFPreview() {
+        const text = document.getElementById('aiResult').value;
+        const paper = document.getElementById('resume-paper');
+
+        if (!text.trim()) {
+            paper.innerHTML = '<p style="color: #666; text-align: center; margin-top: 50px;">Cole o texto à esquerda para visualizar o PDF.</p>';
+            return;
+        }
+
+        // Formata o texto colado no padrão visual do ATS
+        const html = text.split('\n').map(line => {
+            line = line.trim();
+            if (!line) return '<br>';
+            
+            // Detecta títulos maiúsculos (ex: RESUMO, EXPERIÊNCIA)
+            if (line === line.toUpperCase() && line.length > 3 && !line.includes('@')) {
+                return `<div class="r-section-title">${line}</div>`;
+            }
+            
+            // Detecta o nome (primeira linha grande)
+            if (line === text.split('\n')[0].trim()) {
+                return `<div class="r-name">${line}</div>`;
+            }
+
+            // Detecta contatos (contém @ ou números)
+            if (line.includes('@') || line.match(/\d{4,}/)) {
+                return `<div class="r-contact">${line}</div>`;
+            }
+
+            // Texto normal
+            return `<div class="r-item-desc">${line}</div>`;
+        }).join('');
+
+        paper.innerHTML = html;
+    }
+
+    function baixarPDFFinal() {
+        const text = document.getElementById('aiResult').value;
+        if (!text.trim()) { alert("Cole o texto da IA primeiro para gerar o PDF."); return; }
+
+        const element = document.getElementById('resume-paper');
+        const opt = {
+            margin:       [10, 10, 10, 10],
+            filename:     'Curriculo_ATS_Final.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2, useCORS: true, scrollY: 0, windowWidth: 800 },
+            jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+        html2pdf().set(opt).from(element).save();
     }
 </script>
 </body>
