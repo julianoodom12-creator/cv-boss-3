@@ -245,28 +245,88 @@
 </footer>
 
 <script>
-    // --- DICIONÁRIO DE TRADUÇÕES (20 IDIOMAS) ---
-    const translations = {
-        pt: { badge: "🚀 O Segredo para passar nos robôs", heroTitle: "Seu currículo está sendo rejeitado por um robô.", heroSubtitle: "92% dos currículos são descartados por ATS.", jobTitle: "1. Descrição da Vaga", jobPlaceholder: "Cole a vaga aqui...", resumeTitle: "2. Seu Currículo", resumePlaceholder: "Cole seu currículo aqui...", btnAnalyze: "⚡ Analisar com IA", resultTitle: "Resultado da Análise", resultScore: "Compatibilidade", matchTitle: "✅ O que acertou", missTitle: "❌ Faltando", rewriteTitle: "✨ Reescrita com IA", proBadge: "Plano Pro", lockedText: "🔒 Pronta.", unlockBtn: "🔓 Desbloquear", successTitle: "Pago!", alertTitle: "⚠️ Passo a passo", alertText: "Use a IA e volte para gerar o PDF.", btnBackPDF: "📄 Gerar PDF", labelJob: "1. Vaga", labelResume: "2. Currículo", labelAI: "3. Escolha a IA", btnDownloadPDF: "📄 Baixar PDF", pdfPasteTitle: "Cole o texto", pdfPasteSubtitle: "Cole o texto da IA.", pdfPastePlaceholder: "Cole aqui...", pdfPreviewEmpty: "Preview", paywallTitle: "CVBoost Pro", paywallSubtitle: "Desbloqueie.", btnPay: "Pagar R$ 19,90", btnBack: "Voltar" },
-        en: { badge: "🚀 The Secret to pass ATS", heroTitle: "Your resume is being rejected by a robot.", heroSubtitle: "92% are discarded by ATS.", jobTitle: "1. Job Description", jobPlaceholder: "Paste job here...", resumeTitle: "2. Your Resume", resumePlaceholder: "Paste resume here...", btnAnalyze: "⚡ Analyze with AI", resultTitle: "ATS Result", resultScore: "Compatibility", matchTitle: "✅ Matches", missTitle: "❌ Missing", rewriteTitle: "✨ AI Rewrite", proBadge: "Pro", lockedText: "🔒 Ready.", unlockBtn: "🔓 Unlock", successTitle: "Paid!", alertTitle: "⚠️ Step by step", alertText: "Use AI and return to generate PDF.", btnBackPDF: "📄 Generate PDF", labelJob: "1. Job", labelResume: "2. Resume", labelAI: "3. Choose AI", btnDownloadPDF: "📄 Download PDF", pdfPasteTitle: "Paste text", pdfPasteSubtitle: "Paste AI result.", pdfPastePlaceholder: "Paste here...", pdfPreviewEmpty: "Preview", paywallTitle: "CVBoost Pro", paywallSubtitle: "Unlock.", btnPay: "Pay $ 4.99", btnBack: "Back" },
-        es: { badge: "🚀 El Secreto para pasar ATS", heroTitle: "Tu currículum está siendo rechazado por un robot.", heroSubtitle: "El 92% son descartados.", jobTitle: "1. Descripción", jobPlaceholder: "Pega la vacante...", resumeTitle: "2. Tu Currículum", resumePlaceholder: "Pega tu currículum...", btnAnalyze: "⚡ Analizar", resultTitle: "Resultado", resultScore: "Compatibilidad", matchTitle: "✅ Aciertos", missTitle: "❌ Faltantes", rewriteTitle: "✨ Reescritura", proBadge: "Pro", lockedText: "🔒 Listo.", unlockBtn: "🔓 Desbloquear", successTitle: "¡Pagado!", alertTitle: "⚠️ Pasos", alertText: "Usa IA y vuelve.", btnBackPDF: "📄 Generar PDF", labelJob: "1. Vaga", labelResume: "2. Currículum", labelAI: "3. Elegir IA", btnDownloadPDF: "📄 Bajar PDF", pdfPasteTitle: "Pegar texto", pdfPasteSubtitle: "Pega resultado.", pdfPastePlaceholder: "Pega aquí...", pdfPreviewEmpty: "Preview", paywallTitle: "CVBoost Pro", paywallSubtitle: "Desbloquear.", btnPay: "Pagar $ 4.99", btnBack: "Volver" },
-        // Outros idiomas usam inglês como fallback
+    // --- DICIONÁRIO BASE (Português) ---
+    const baseTranslations = {
+        badge: "🚀 O Segredo para passar nos robôs",
+        heroTitle: "Seu currículo está sendo rejeitado por um robô.",
+        heroSubtitle: "92% dos currículos são descartados por ATS.",
+        jobTitle: "1. Descrição da Vaga",
+        jobPlaceholder: "Cole a vaga aqui...",
+        resumeTitle: "2. Seu Currículo",
+        resumePlaceholder: "Cole seu currículo aqui...",
+        btnAnalyze: "⚡ Analisar com IA",
+        resultTitle: "Resultado da Análise",
+        resultScore: "Compatibilidade",
+        matchTitle: "✅ O que acertou",
+        missTitle: "❌ Faltando",
+        rewriteTitle: "✨ Reescrita com IA",
+        proBadge: "Plano Pro",
+        lockedText: "🔒 Pronta.",
+        unlockBtn: "🔓 Desbloquear",
+        successTitle: "Pago!",
+        alertTitle: "⚠️ Passo a passo",
+        alertText: "Use a IA e volte para gerar o PDF.",
+        btnBackPDF: "📄 Gerar PDF",
+        labelJob: "1. Vaga",
+        labelResume: "2. Currículo",
+        labelAI: "3. Escolha a IA",
+        btnDownloadPDF: "📄 Baixar PDF",
+        pdfPasteTitle: "Cole o texto",
+        pdfPasteSubtitle: "Cole o texto da IA.",
+        pdfPastePlaceholder: "Cole aqui...",
+        pdfPreviewEmpty: "Preview",
+        paywallTitle: "CVBoost Pro",
+        paywallSubtitle: "Desbloqueie.",
+        btnPay: "Pagar R$ 19,90",
+        btnBack: "Voltar"
     };
-    const fallbackLang = 'en'; 
 
-    function changeLanguage() {
+    // Função assíncrona para traduzir textos
+    async function changeLanguage() {
         const selectedLang = document.getElementById('langSelect').value;
-        const t = translations[selectedLang] || translations[fallbackLang];
+        const elementsToTranslate = document.querySelectorAll('[data-i18n]');
+        
+        // Se for Português, aplica direto do dicionário base (sem gastar API)
+        if (selectedLang === 'pt') {
+            elementsToTranslate.forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (baseTranslations[key]) el.innerHTML = baseTranslations[key];
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                const key = el.getAttribute('data-i18n-placeholder');
+                if (baseTranslations[key]) el.placeholder = baseTranslations[key];
+            });
+            return;
+        }
 
-        document.querySelectorAll('[data-i18n]').forEach(el => {
-            const key = el.getAttribute('data-i18n');
-            if (t[key]) el.innerHTML = t[key];
-        });
+        // Para os outros 19 idiomas, usa a API gratuita do Google Translate
+        const texts = Array.from(elementsToTranslate).map(el => baseTranslations[el.getAttribute('data-i18n')]);
+        const placeholders = Array.from(document.querySelectorAll('[data-i18n-placeholder]')).map(el => baseTranslations[el.getAttribute('data-i18n-placeholder')]);
+        
+        // Junta tudo num texto só separado por pipe para traduzir de uma vez
+        const payload = texts.concat(placeholders).join(' | ');
+        
+        try {
+            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=pt&tl=${selectedLang}&dt=t&q=${encodeURIComponent(payload)}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            // Reconstrói o texto traduzido
+            let translatedFullText = data[0].map(item => item[0]).join('');
+            let translatedParts = translatedFullText.split(' | ');
+            
+            // Aplica as traduções no HTML
+            elementsToTranslate.forEach((el, index) => {
+                el.innerHTML = translatedParts[index] || el.innerHTML;
+            });
+            
+            document.querySelectorAll('[data-i18n-placeholder]').forEach((el, index) => {
+                el.placeholder = translatedParts[texts.length + index] || el.placeholder;
+            });
 
-        document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-            const key = el.getAttribute('data-i18n-placeholder');
-            if (t[key]) el.placeholder = t[key];
-        });
+        } catch (error) {
+            console.error("Erro na tradução automática", error);
+        }
     }
 
     // --- SEGURANÇA E REDIRECIONAMENTO AUTOMÁTICO ---
@@ -280,11 +340,10 @@
         }
     };
 
-    // Redireciona para o Mercado Pago (A URL já inclui o redirecionamento automático)
+    // Redireciona para o Mercado Pago
     function irParaPagamento() {
-        // Aqui garantimos que, se o Mercado Pago aceitar, ele volta para cá com o status=sucesso
-        // Nota: Para o MP redirecionar automaticamente, o link precisa ser gerado via API.
-        // Se não for possível, o usuário só precisa clicar em "Voltar para o site" no MP.
+        // IMPORTANTE: O link do Mercado Pago precisa estar configurado 
+        // para redirecionar de volta para https://cvboost-two.vercel.app/?status=sucesso
         window.location.href = 'https://mpago.la/1D3VdLV'; 
     }
 
