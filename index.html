@@ -31,6 +31,13 @@
     .tool-container { max-width: 1000px; margin: 0 auto 40px; padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
     .panel { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
     .panel h2 { font-size: 1.1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+    
+    /* Link Input Restaurado */
+    .link-group { display: flex; gap: 10px; }
+    .link-group input { flex: 1; padding: 14px; border-radius: 8px; border: 1px solid var(--border); background: #09090b; color: var(--text); outline: none; }
+    .link-group input:focus { border-color: var(--primary); }
+    .link-group button { padding: 0 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
     textarea { width: 100%; height: 200px; background: #09090b; border: 1px solid var(--border); border-radius: 8px; padding: 16px; color: var(--text); font-size: 0.95rem; resize: vertical; outline: none; font-family: monospace; }
     .btn-primary { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; }
     .btn-primary:hover { background: var(--primary-hover); }
@@ -105,7 +112,7 @@
 <div class="screen active" id="screen-main">
     <header>
         <div class="logo">CV<span>Boost</span></div>
-        <!-- SELETOR DE IDIOMAS RESTAURADO -->
+        <!-- SELETOR DE IDIOMAS -->
         <select class="lang-selector" id="langSelect" onchange="changeLanguage()">
             <option value="pt">🇧🇷 Português</option>
             <option value="en">🇺🇸 English</option>
@@ -139,7 +146,15 @@
     <div class="tool-container">
         <div class="panel">
             <h2 data-i18n="jobTitle">1. Descrição da Vaga</h2>
-            <textarea id="jobText" data-i18n-placeholder="jobPlaceholder" placeholder="Cole aqui a descrição da vaga..."></textarea>
+            
+            <!-- CAMPO DE LINK -->
+            <div class="link-group">
+                <input type="url" id="jobLink" placeholder="Cole o link da vaga (LinkedIn, Indeed...)" data-i18n-placeholder="linkPlaceholder">
+                <button onclick="extrairVaga()" data-i18n="btnExtract">Extrair</button>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--muted);" data-i18n="linkWarning">O LinkedIn pode bloquear a leitura automática. Se isso acontecer, abriremos a vaga para você copiar.</p>
+
+            <textarea id="jobText" data-i18n-placeholder="jobPlaceholder" placeholder="Ou cole aqui a descrição da vaga..."></textarea>
         </div>
 
         <div class="panel">
@@ -270,7 +285,10 @@
         heroTitle: "Seu currículo está sendo rejeitado por um robô.",
         heroSubtitle: "92% dos currículos são descartados por ATS.",
         jobTitle: "1. Descrição da Vaga",
-        jobPlaceholder: "Cole a vaga aqui...",
+        linkPlaceholder: "Cole o link da vaga (LinkedIn, Indeed...)",
+        btnExtract: "Extrair",
+        linkWarning: "O LinkedIn pode bloquear a leitura automática. Se isso acontecer, abriremos a vaga para você copiar.",
+        jobPlaceholder: "Ou cole aqui a descrição da vaga...",
         resumeTitle: "2. Seu Currículo",
         resumePlaceholder: "Cole seu currículo aqui...",
         btnAnalyze: "⚡ Analisar com IA",
@@ -333,13 +351,39 @@
         } catch (error) { console.error("Erro na tradução", error); }
     }
 
-    // =========================================================
-    // CONTROLE DE ACESSO À TELA DE SUCESSO
-    // =========================================================
+    // --- LÓGICA DE EXTRAIR VAGA ---
+    async function extrairVaga() {
+        const link = document.getElementById('jobLink').value;
+        if (!link) { alert("Cole um link primeiro."); return; }
+
+        showToast("Tentando extrair a vaga...");
+        
+        try {
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(link)}`;
+            const response = await fetch(proxyUrl);
+            const data = await response.json();
+            
+            if (data.contents) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data.contents, "text/html");
+                let textoVaga = doc.body.innerText || doc.body.textContent;
+                
+                if (textoVaga.length > 100) {
+                    document.getElementById('jobText').value = textoVaga.substring(0, 5000);
+                    showToast("Vaga extraída!");
+                    return;
+                }
+            }
+            throw new Error("Bloqueado.");
+        } catch (error) {
+            showToast("Bloqueio. Abrindo a vaga...");
+            window.open(link, '_blank');
+        }
+    }
+
+    // --- SEGURANÇA E REDIRECIONAMENTO AUTOMÁTICO ---
     window.onload = function() {
         const urlParams = new URLSearchParams(window.location.search);
-        
-        // Se a URL tiver ?status=sucesso, vai direto para a tela de liberação
         if (urlParams.get('status') === 'sucesso') {
             document.getElementById('screen-main').classList.remove('active');
             document.getElementById('screen-success').classList.add('active');
@@ -347,17 +391,22 @@
         }
     };
 
-    // --- NAVEGAÇÃO ---
-    function abrirPaywall() { document.getElementById('paywall').classList.add('active'); }
-    function fecharPaywall() { document.getElementById('paywall').classList.remove('active'); }
-
     function mostrarTelaPDF() {
         document.getElementById('screen-success').classList.remove('active');
         document.getElementById('screen-pdf').classList.add('active');
         window.scrollTo(0, 0);
     }
 
-    // --- LÓGICA DA ANÁLISE ---
+    function abrirPaywall() { document.getElementById('paywall').classList.add('active'); }
+    function fecharPaywall() { document.getElementById('paywall').classList.remove('active'); }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
     function analisarCurriculo() {
         const jobText = document.getElementById('jobText').value.toLowerCase();
         const resumeText = document.getElementById('resumeText').value.toLowerCase();
@@ -402,7 +451,6 @@
         }, 1500);
     }
 
-    // --- LÓGICA DO PROMPT IA ---
     function gerarPromptFinal(plataforma) {
         const vaga = document.getElementById('success-job').value.trim();
         const curriculo = document.getElementById('success-resume').value.trim();
@@ -434,7 +482,6 @@ ${curriculo}`;
         });
     }
 
-    // --- LÓGICA DO PDF ---
     function renderPDFPreview() {
         const text = document.getElementById('aiResult').value;
         const paper = document.getElementById('resume-paper');
@@ -461,13 +508,6 @@ ${curriculo}`;
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
         html2pdf().set(opt).from(element).save();
-    }
-
-    function showToast(msg) {
-        const toast = document.getElementById('toast');
-        toast.innerText = msg;
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 3000);
     }
 </script>
 </body>
