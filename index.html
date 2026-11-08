@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CVBoost - Otimizador de Currículos ATS</title>
+<style>
+    :root {
+        --bg: #09090b; --card: #18181b; --border: #27272a;
+        --text: #fafafa; --muted: #a1a1aa; --primary: #6d28d9;
+        --primary-hover: #5b21b6; --green: #10b981; --red: #ef4444;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', system-ui, sans-serif; }
+    body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Header SaaS */
+    header { border-bottom: 1px solid var(--border); padding: 20px; display: flex; justify-content: space-between; align-items: center; background: rgba(9,9,11,0.8); backdrop-filter: blur(10px); position: sticky; top: 0; z-index: 100; }
+    .logo { font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; display: flex; align-items: center; gap: 8px; }
+    .logo span { color: var(--primary); }
+    .nav-links a { color: var(--muted); text-decoration: none; margin-left: 20px; font-size: 0.9rem; font-weight: 500; transition: 0.2s; }
+    .nav-links a:hover { color: var(--text); }
+    .btn-upgrade { background: var(--primary); color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+    .btn-upgrade:hover { background: var(--primary-hover); }
+
+    /* Hero Section */
+    .hero { text-align: center; padding: 40px 20px 20px; max-width: 800px; margin: 0 auto; }
+    .hero h1 { font-size: 2.5rem; font-weight: 900; line-height: 1.1; margin-bottom: 15px; background: linear-gradient(to right, #fff, #a1a1aa); -webkit-background-clip: text; color: transparent; }
+    .hero p { font-size: 1rem; color: var(--muted); margin-bottom: 20px; }
+    .badge { display: inline-block; background: rgba(109, 40, 217, 0.2); color: #c4b5fd; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; margin-bottom: 15px; border: 1px solid rgba(109, 40, 217, 0.5); }
+
+    /* Ferramenta (App) */
+    .tool-container { max-width: 1000px; margin: 0 auto 40px; padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    
+    .panel { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+    .panel h2 { font-size: 1.1rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+    
+    .link-input-group { display: flex; gap: 10px; }
+    .link-input-group input { flex: 1; padding: 14px; border-radius: 8px; border: 1px solid var(--border); background: #09090b; color: var(--text); outline: none; }
+    .link-input-group input:focus { border-color: var(--primary); }
+    .link-input-group button { padding: 0 20px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+    textarea { width: 100%; height: 200px; background: #09090b; border: 1px solid var(--border); border-radius: 8px; padding: 16px; color: var(--text); font-size: 0.95rem; resize: vertical; outline: none; font-family: monospace; }
+    textarea:focus { border-color: var(--primary); }
+    
+    .btn-primary { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 8px; font-size: 1rem; font-weight: 700; cursor: pointer; transition: 0.2s; display: flex; justify-content: center; align-items: center; gap: 8px; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; font-size: 0.9rem; }
+    .btn-secondary:hover { background: var(--border); }
+
+    /* Resultados */
+    .results-panel { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 30px; max-width: 1000px; margin: 0 auto 60px; }
+    .results-panel.active { display: block; animation: fadeIn 0.5s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .score-circle { width: 120px; height: 120px; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 2.5rem; font-weight: 900; margin: 0 auto 20px; position: relative; }
+    .score-circle::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 4px solid var(--border); }
+    
+    .score-good { color: var(--green); border-color: var(--green) !important; }
+    .score-warning { color: #f59e0b; border-color: #f59e0b !important; }
+    .score-bad { color: var(--red); border-color: var(--red) !important; }
+
+    .feedback-box { background: #09090b; border: 1px solid var(--border); border-radius: 8px; padding: 20px; margin-top: 20px; }
+    .feedback-box h3 { font-size: 1rem; margin-bottom: 10px; color: var(--green); }
+    .feedback-box ul { list-style-position: inside; color: var(--muted); font-size: 0.95rem; line-height: 1.6; }
+    .feedback-box li { margin-bottom: 8px; }
+    .keyword-miss { color: var(--red); font-weight: bold; }
+
+    /* NOVO: Área de Reescrita com IA */
+    .rewrite-section { margin-top: 30px; border-top: 1px solid var(--border); padding-top: 30px; }
+    .rewrite-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+    .rewrite-header h3 { font-size: 1.2rem; color: var(--text); }
+    .rewrite-preview { position: relative; background: #09090b; border: 1px solid var(--border); border-radius: 8px; padding: 20px; font-size: 0.95rem; line-height: 1.6; color: var(--muted); font-family: monospace; max-height: 250px; overflow: hidden; }
+    .rewrite-preview.blurred { filter: blur(5px); user-select: none; }
+    .rewrite-overlay { position: absolute; inset: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; background: rgba(9,9,11,0.7); z-index: 10; }
+    .rewrite-overlay p { color: var(--text); font-weight: bold; margin-bottom: 15px; font-size: 1.1rem; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+    .rewrite-overlay button { background: var(--green); color: white; border: none; padding: 12px 24px; border-radius: 30px; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4); transition: 0.2s; }
+    .rewrite-overlay button:hover { transform: scale(1.05); }
+
+    /* Paywall Overlay */
+    .paywall { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 1000; padding: 20px; }
+    .paywall.active { display: flex; }
+    .paywall-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; max-width: 400px; width: 100%; padding: 32px; text-align: center; }
+    .paywall-box h2 { font-size: 1.5rem; margin-bottom: 10px; }
+    .paywall-box p { color: var(--muted); font-size: 0.9rem; margin-bottom: 20px; }
+    .price { font-size: 2.5rem; font-weight: 900; color: var(--text); margin-bottom: 20px; }
+    .price span { font-size: 1rem; color: var(--muted); font-weight: normal; }
+    .close-paywall { background: none; border: none; color: var(--muted); margin-top: 15px; cursor: pointer; font-size: 0.85rem; text-decoration: underline; }
+
+    /* Toast */
+    #toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 12px 24px; border-radius: 30px; font-weight: bold; opacity: 0; transition: 0.3s; pointer-events: none; z-index: 2000; }
+    #toast.show { opacity: 1; }
+
+    @media (max-width: 768px) {
+        .tool-container { grid-template-columns: 1fr; }
+        .hero h1 { font-size: 2rem; }
+        .nav-links { display: none; }
+    }
+</style>
+</head>
+<body>
+
+<header>
+    <div class="logo">CV<span>Boost</span></div>
+    <div class="nav-links">
+        <button class="btn-upgrade" onclick="abrirPaywall()">Fazer Upgrade</button>
+    </div>
+</header>
+
+<div class="hero">
+    <div class="badge">🚀 O Segredo para passar nos robôs de recrutamento</div>
+    <h1>Seu currículo está sendo rejeitado por um robô.</h1>
+    <p>92% dos currículos são descartados por sistemas ATS antes de chegarem a um humano.</p>
+</div>
+
+<div class="tool-container">
+    <div class="panel">
+        <h2>1. Link da Vaga</h2>
+        <div class="link-input-group">
+            <input type="url" id="jobLink" placeholder="Cole o link da vaga (LinkedIn, Indeed...)">
+            <button onclick="extrairVaga()">Extrair</button>
+        </div>
+        <p style="font-size: 0.75rem; color: var(--muted);">O LinkedIn pode bloquear a leitura automática. Se isso acontecer, abriremos a vaga para você copiar.</p>
+        
+        <div style="margin-top: 10px;">
+            <h2>Ou cole o texto da vaga</h2>
+            <textarea id="jobText" placeholder="Cole aqui a descrição da vaga..."></textarea>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>2. Seu Currículo Atual</h2>
+        <textarea id="resumeText" placeholder="Cole aqui o texto do seu currículo atual..."></textarea>
+        
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-secondary" onclick="colarCurriculo()" style="flex: 1;">📋 Colar</button>
+            <button class="btn-secondary" onclick="limparCurriculo()" style="flex: 1;">🗑️ Limpar</button>
+        </div>
+
+        <button class="btn-primary" id="btnAnalyze" onclick="analisarCurriculo()">⚡ Analisar com IA</button>
+    </div>
+</div>
+
+<div class="results-panel" id="resultsPanel">
+    <h2 style="text-align: center; color: var(--text); margin-bottom: 20px;">Resultado da Análise ATS</h2>
+    
+    <div class="score-circle score-bad" id="scoreCircle">
+        <span id="scoreValue">0%</span>
+    </div>
+    <p style="text-align: center; color: var(--muted); margin-bottom: 30px;">Compatibilidade com a vaga</p>
+
+    <div class="feedback-box">
+        <h3>✅ O que você acertou</h3>
+        <ul id="listMatches"></ul>
+    </div>
+
+    <div class="feedback-box">
+        <h3>❌ Palavras-chave faltantes</h3>
+        <ul id="listMissing"></ul>
+    </div>
+
+    <!-- NOVA SEÇÃO: REESCREVER COM IA -->
+    <div class="rewrite-section">
+        <div class="rewrite-header">
+            <h3>✨ Reescrita com Inteligência Artificial</h3>
+            <span class="badge" style="margin-bottom: 0;">Plano Pro</span>
+        </div>
+        
+        <div class="rewrite-preview blurred" id="rewritePreview">
+            <!-- O texto simulado da IA vai aqui -->
+            <p><strong>Juliano Vieira</strong><br>Almoxarife / Operador de Logística</p>
+            <p><strong>Resumo Profissional:</strong><br>Profissional com mais de 15 anos de experiência em logística, com sólido histórico em controle de estoque e gestão de almoxarifado. Especialista em otimizar processos, garantindo a acurácia do inventário e o cumprimento de metas operacionais.</p>
+            <p><strong>Experiência:</strong><br>Atuação destacada na BRF Marfrig Foods, sendo responsável pela gestão completa do almoxarifado e operação de transpaleteira. Vivência prática em operação de ponte rolante na Alcast do Brasil.</p>
+            <p><strong>Competências:</strong> Gestão de Estoque, Operação de Empilhadeira, Logística Integrada, Pacote Office.</p>
+        </div>
+
+        <div class="rewrite-overlay" id="rewriteOverlay">
+            <p>🔒 Sua versão otimizada está pronta.</p>
+            <button onclick="abrirPaywall()">🔓 Desbloquear para copiar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Paywall (Monetização) -->
+<div class="paywall" id="paywall">
+    <div class="paywall-box">
+        <h2>Desbloqueie o CVBoost Pro</h2>
+        <p>Copie o currículo reescrito pela IA, adicione as palavras-chave e baixe o PDF formatado.</p>
+        <div class="price">R$ 19,90<span>/mês</span></div>
+        <button class="btn-primary" style="width: 100%;" onclick="window.open('https://mpago.la/1D3VdLV', '_blank')">Assinar Agora</button>
+        <button class="close-paywall" onclick="fecharPaywall()">Continuar com o plano grátis</button>
+    </div>
+</div>
+
+<div id="toast">Notificação</div>
+
+<script>
+    // Controle de Paywall
+    function abrirPaywall() { document.getElementById('paywall').classList.add('active'); }
+    function fecharPaywall() { document.getElementById('paywall').classList.remove('active'); }
+
+    // Notificação Toast
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.innerText = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    function colarCurriculo() {
+        if (!navigator.clipboard) { showToast("Navegador não suporta."); return; }
+        navigator.clipboard.readText().then(text => {
+            document.getElementById('resumeText').value = text;
+            showToast("Currículo colado!");
+        }).catch(err => showToast("Permissão negada."));
+    }
+
+    function limparCurriculo() {
+        document.getElementById('resumeText').value = '';
+        document.getElementById('jobText').value = '';
+        document.getElementById('jobLink').value = '';
+        document.getElementById('resultsPanel').classList.remove('active');
+        showToast("Campos limpos.");
+    }
+
+    async function extrairVaga() {
+        const link = document.getElementById('jobLink').value;
+        if (!link) { showToast("Cole um link primeiro."); return; }
+
+        showToast("Extraindo vaga...");
+        try {
+            const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(link)}`;
+            const response = await fetch(proxyUrl);
+            const data = await response.json();
+            
+            if (data.contents) {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(data.contents, "text/html");
+                let textoVaga = doc.body.innerText || doc.body.textContent;
+                
+                if (textoVaga.length > 100) {
+                    document.getElementById('jobText').value = textoVaga.substring(0, 5000);
+                    showToast("Vaga extraída!");
+                    return;
+                }
+            }
+            throw new Error("Bloqueado.");
+        } catch (error) {
+            showToast("Bloqueio. Abrindo a vaga...");
+            window.open(link, '_blank');
+        }
+    }
+
+    function analisarCurriculo() {
+        const jobText = document.getElementById('jobText').value.toLowerCase();
+        const resumeText = document.getElementById('resumeText').value.toLowerCase();
+        
+        if (!jobText || !resumeText) { alert("Preencha a vaga e o currículo."); return; }
+
+        const btn = document.getElementById('btnAnalyze');
+        btn.innerHTML = "Analisando...";
+        btn.disabled = true;
+
+        setTimeout(() => {
+            const jobWords = jobText.match(/\b[a-z]{4,}\b/g) || [];
+            const resumeWords = resumeText.match(/\b[a-z]{4,}\b/g) || [];
+            const stopWords = ['para', 'como', 'mais', 'pelo', 'pela', 'este', 'esta', 'isso', 'essa', 'com', 'uma', 'dos', 'das', 'que', 'não', 'por', 'ser', 'sua', 'seu'];
+            
+            const uniqueJobWords = [...new Set(jobWords.filter(w => !stopWords.includes(w)))];
+            const uniqueResumeWords = [...new Set(resumeWords)];
+
+            const matches = [];
+            const missing = [];
+
+            uniqueJobWords.forEach(word => {
+                if (uniqueResumeWords.some(rw => rw.includes(word.substring(0, 4)))) {
+                    if(matches.length < 8) matches.push(word);
+                } else {
+                    if(missing.length < 8) missing.push(word);
+                }
+            });
+
+            const score = Math.round((matches.length / (matches.length + missing.length)) * 100) || 0;
+
+            document.getElementById('scoreValue').innerText = score + '%';
+            const circle = document.getElementById('scoreCircle');
+            circle.className = 'score-circle ' + (score > 70 ? 'score-good' : score > 40 ? 'score-warning' : 'score-bad');
+
+            document.getElementById('listMatches').innerHTML = matches.length ? matches.map(m => `<li>${m}</li>`).join('') : '<li>Nenhuma palavra forte.</li>';
+            document.getElementById('listMissing').innerHTML = missing.length ? missing.map(m => `<li class="keyword-miss">${m}</li>`).join('') : '<li>Parabéns! Nada faltando.</li>';
+
+            // Revela o painel de resultados (incluindo a área de reescrita bloqueada)
+            document.getElementById('resultsPanel').classList.add('active');
+            
+            btn.innerHTML = "⚡ Analisar com IA";
+            btn.disabled = false;
+            
+            document.getElementById('resultsPanel').scrollIntoView({ behavior: 'smooth' });
+        }, 1500);
+    }
+</script>
+</body>
+</html>
